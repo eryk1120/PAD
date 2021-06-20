@@ -1,6 +1,9 @@
+import matplotlib.pyplot as plt
 from tqdm import tqdm
 import numpy as np
 import random
+
+from scipy.ndimage import gaussian_filter
 
 from PIL import Image
 
@@ -12,7 +15,6 @@ def generate_data():
         im.save(f"../raw_data/{i}.png")
     print("done")
 
-
 def generate_ball():
     # output image properties
     im_size = (256, 256)  # imSize
@@ -23,11 +25,21 @@ def generate_ball():
 
     # werid ass parameters for phase properties of balls
     sigma_range = (10, 30)  # Bsigm
-    same_sigma = 0 # same sigma for all of the balls on single image;  1-yes 0-no
+    same_sigma = False # same sigma for all of the balls on single image;
+
+    def simgaGenerator():
+        if same_sigma:
+            sigma = sigma_range[0] + random.random() * (sigma_range[1] - sigma_range[0])
+            while True:
+                yield sigma
+        while True:
+            yield sigma_range[0] + random.random() * (sigma_range[1] - sigma_range[0])
+
+    sigma_generator = simgaGenerator()
 
     # choose circle coordinates
 
-    max_no_balls = 5
+    max_no_balls = 10
     coordinates =[]
 
     # picking coordinates for balls
@@ -45,12 +57,27 @@ def generate_ball():
             elif min(distances)<ball_sep_dist:
                 coordinates.append((x_c,y_c))
                 break
+
     print(f'given c set: {coordinates}')
-    for c in coordinates:
-        sigma_sign = random.choice((-1,1))
+    phase_plates = [np.zeros(im_size,dtype=float) for i in range(len(coordinates))]
 
+    im_out = np.zeros(im_size,dtype=float)
 
+    for plate, coor in zip(phase_plates,coordinates):
+        # todo split phase image into positive and negative
+        print(coor)
+        plate[coor]=random.choice([-1,1])
+        plate = gaussian_filter(plate,next(sigma_generator))
+        im_out += plate
+        plt.imshow(plate)
+        plt.title(coor)
+        plt.colorbar()
+        plt.show()
 
+    plt.imshow(im_out)
+    plt.title("merged")
+    plt.colorbar()
+    plt.show()
 
 
 if __name__ == "__main__":
