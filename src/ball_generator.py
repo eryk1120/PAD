@@ -67,15 +67,13 @@ def generate_ball():
     no_balls = random.randint(1, max_no_balls)
 
     data = {"negative": {"coordinates": [], "phase": np.zeros(im_size, dtype=float)},
-            "positive": {"coordinates": [], "phase": np.zeros(im_size, dtype=float)},
-            "merged": {"coordinates": [], "phase": np.zeros(im_size, dtype=float)}
+            "positive": {"coordinates": [], "phase": np.zeros(im_size, dtype=float)}
             }
 
     no_balls_positive = random.randint(0, no_balls)
 
     data['negative']['coordinates'] = random_tuple_list(number_of_points=no_balls - no_balls_positive)
     data['positive']['coordinates'] = random_tuple_list(number_of_points=no_balls_positive)
-    data['merged']['coordinates'] = data['positive']['coordinates'] + data['negative']['coordinates']
 
     for coordinate in data['negative']['coordinates']:
         plate = np.zeros(im_size, dtype=float)
@@ -92,32 +90,29 @@ def generate_ball():
         plate = normalize_array(plate)
 
         data['positive']['phase'] += plate
-        # plt.imshow(plate)
-        # plt.title("plate")
-        # plt.colorbar()
-        # plt.show()
 
-    data['merged']['phase'] = data['positive']['phase'] + data['negative']['phase'] + 2
+    data_sample = (data['positive']['phase'] + data['negative']['phase'] + 2,
+                   np.stack([data['negative']['phase'],data['positive']['phase']],axis=0))
 
-    # plt.imshow(data['negative']['phase'])
-    # plt.title("negative")
-    # plt.colorbar()
-    # plt.show()
-    #
-    # plt.imshow(data['positive']['phase'])
-    # plt.title("positive")
-    # plt.colorbar()
-    # plt.show()
+    plt.imshow(data_sample[1][0,:,:])
+    plt.title("negative")
+    plt.colorbar()
+    plt.show()
 
-    # plt.imshow(data['merged']['phase'])
-    # plt.title("merged")
-    # plt.colorbar()
-    # plt.show()
+    plt.imshow(data_sample[1][1,:,:])
+    plt.title("positive")
+    plt.colorbar()
+    plt.show()
 
-    return data
+    plt.imshow(data_sample[0])
+    plt.title("merged")
+    plt.colorbar()
+    plt.show()
+
+    return data_sample
 
 
-def generate_data(no_images=5, make_pickles=True, raw_save=True):
+def generate_data(no_images=5, make_pickles=True, raw_save=False):
     data = []
     for i in tqdm(range(no_images), desc='Generating images...'):
         data.append(generate_ball())
@@ -132,4 +127,4 @@ def generate_data(no_images=5, make_pickles=True, raw_save=True):
 
 
 if __name__ == "__main__":
-    generate_data(no_images=5)
+    generate_data(no_images=1000)
