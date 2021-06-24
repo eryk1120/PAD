@@ -12,12 +12,29 @@ from PIL import Image
 
 
 def normalize_array(array, value_range=(0, 1)):
+    '''
+    Function that takes given array, and normalizes it between given value
+    :param array: given array to normalize
+    :param value_range: tuple of lower and upper value to normalize array values
+    :return: returns normalizes array
+    '''
     array -= array.min()
     array = array / array.max() * (value_range[1] - value_range[0]) + value_range[0]
     return array
 
 
 def random_tuple_list(number_of_points=1, border_size=50, im_size=(256, 256), ball_sep_dist=60, ):
+    '''
+    generating list of given length* of 2 element tuplets coresponding to xy positions
+    one can specify  distances between generated coordinates, and distance from border
+
+    * generated list can be shorter than given length if minimum can't be fulfield
+    :param number_of_points: number of generated points
+    :param border_size: minimum distance from egde of the plate
+    :param im_size:  size of plane, tuple of xy dimensions eg. (256,256)
+    :param ball_sep_dist: minimum distance between points
+    :return: gieves list of tuplets coresponding to randomly selected xy coordinates
+    '''
     coordinates = []
     tries = 0
     for i in range(number_of_points):
@@ -44,6 +61,10 @@ def random_tuple_list(number_of_points=1, border_size=50, im_size=(256, 256), ba
 
 
 def generate_ball():
+    '''
+    generates one plate of balls
+    :return:
+    '''
     # output image properties
     im_size = (256, 256)  # imSize
 
@@ -113,6 +134,13 @@ def generate_ball():
 
 
 def generate_data(no_images=5, make_pickles=True, raw_save=False):
+    '''
+    generates and if chosen,saves data series as pickle or in raw format
+    :param no_images: number of images <int>
+    :param make_pickles: wether to save series as pickle <bool>
+    :param raw_save: wether to save raw images<bool>
+    :return: NONE
+    '''
     data = []
     for i in tqdm(range(no_images), desc='Generating images...'):
         data.append(generate_ball())
