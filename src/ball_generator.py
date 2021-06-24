@@ -2,18 +2,13 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import numpy as np
 import random
+import time
+from datetime import datetime
+import pickle
 
 from scipy.ndimage import gaussian_filter
 
 from PIL import Image
-
-
-def generate_data():
-    for i in tqdm(range(12), desc='Generating images...'):
-        array = np.zeros((512, 512), dtype=np.uint8)
-        im = Image.fromarray(array)
-        im.save(f"../raw_data/{i}.png")
-    print("done")
 
 
 def normalize_array(array, value_range=(0, 1)):
@@ -24,10 +19,9 @@ def normalize_array(array, value_range=(0, 1)):
 
 def random_tuple_list(number_of_points=1, border_size=50, im_size=(256, 256), ball_sep_dist=60, ):
     coordinates = []
+    tries = 0
     for i in range(number_of_points):
         while True:
-            # TODO that while loop can be infinite, or close to
-            #  if given wrong arguments, definitely something to repair, but works for application
             x_c, y_c = (random.randint(border_size, im_size[0] - border_size + 1),
                         random.randint(border_size, im_size[1] - border_size + 1))
             # print(f"x:{x_c}, y:{y_c}")
@@ -41,6 +35,11 @@ def random_tuple_list(number_of_points=1, border_size=50, im_size=(256, 256), ba
             elif min(distances) > ball_sep_dist:
                 coordinates.append((x_c, y_c))
                 break
+            elif tries >= 0:
+                tries = 0
+                break
+            else:
+                tries + -1
     return coordinates
 
 
@@ -76,45 +75,61 @@ def generate_ball():
 
     data['negative']['coordinates'] = random_tuple_list(number_of_points=no_balls - no_balls_positive)
     data['positive']['coordinates'] = random_tuple_list(number_of_points=no_balls_positive)
-    data['merged']['coordinates'] = data['positives']['coordinates'] + data['negative']['coordinates']
+    data['merged']['coordinates'] = data['positive']['coordinates'] + data['negative']['coordinates']
 
     for coordinate in data['negative']['coordinates']:
-        sign = random.choice([-1, 1])
-
         plate = np.zeros(im_size, dtype=float)
-        plate[coordinate] = sign
+        plate[coordinate] = 1
         plate = gaussian_filter(plate, next(sigma_generator))
-        plate = normalize_array(plate)
+        plate = -normalize_array(plate)
 
-        data['negative']['phase'] -= plate
-        data['merged']['phase'] += plate
+        data['negative']['phase'] += plate
 
     for coordinate in data['positive']['coordinates']:
-        sign = random.choice([-1, 1])
-
         plate = np.zeros(im_size, dtype=float)
-        plate[coordinate] = sign
+        plate[coordinate] = 1
         plate = gaussian_filter(plate, next(sigma_generator))
         plate = normalize_array(plate)
 
         data['positive']['phase'] += plate
-        data['merged']['phase'] += plate
+        # plt.imshow(plate)
+        # plt.title("plate")
+        # plt.colorbar()
+        # plt.show()
 
-    plt.imshow(data['negative']['phase'])
-    plt.title("negative")
-    plt.colorbar()
-    plt.show()
+    data['merged']['phase'] = data['positive']['phase'] + data['negative']['phase'] + 2
 
-    plt.imshow(data['positive']['phase'])
-    plt.title("positive")
-    plt.colorbar()
-    plt.show()
+    # plt.imshow(data['negative']['phase'])
+    # plt.title("negative")
+    # plt.colorbar()
+    # plt.show()
+    #
+    # plt.imshow(data['positive']['phase'])
+    # plt.title("positive")
+    # plt.colorbar()
+    # plt.show()
 
-    plt.imshow(data['merged']['phase'])
-    plt.title("merged")
-    plt.colorbar()
-    plt.show()
+    # plt.imshow(data['merged']['phase'])
+    # plt.title("merged")
+    # plt.colorbar()
+    # plt.show()
+
+    return data
+
+
+def generate_data(no_images=5, make_pickles=True, raw_save=True):
+    data = []
+    for i in tqdm(range(no_images), desc='Generating images...'):
+        data.append(generate_ball())
+        if raw_save:
+            pass
+    if make_pickles:
+        # print(data)
+        file_name = f'../pickles/{datetime.now().strftime("%d.%m.%Y_%H:%M:S")}.pickle'
+        with open(file_name, 'wb') as file:
+            pickle.dump(data, file)
+            pass
 
 
 if __name__ == "__main__":
-    generate_ball()
+    generate_data(no_images=5)
